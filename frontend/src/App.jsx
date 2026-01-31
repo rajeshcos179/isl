@@ -8,23 +8,50 @@ function App() {
   const [inputText, setInputText] = useState("");
   const [animationUrl, setAnimationUrl] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleVideoUpload = async () => {
     if (!video) return alert("Select a video!");
 
-    setEnglishText("How are you")
-    // const result = await uploadVideo(video);
-    // setEnglishText(result.english_text);
+    setLoading(true);
+    try {
+      const result = await uploadVideo(video);
+      setEnglishText(result.text);
+      console.log("Translation result:", result);
+    } catch (error) {
+      console.error("Error during translation:", error);
+      alert("Error translating video. Please check the console.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTextSubmit = async () => {
     if (!inputText) return alert("Enter text!");
 
-    // const result = await textToSign(inputText);
-    // setAnimationUrl(result.animation_url);
+    try {
+      setLoading(true);
+      const result = await textToSign(inputText);
+      
+      // Console log the pose JSON data
+      console.log("=== Pose Data JSON ===");
+      console.log(JSON.stringify(result, null, 2));
+      console.log("=== Pose Data Object ===");
+      console.log(result);
+      
+      if (result.status === "success") {
+        console.log("✅ Successfully generated poses for:", result.glosses);
+        console.log("Pose data keys:", Object.keys(result.pose_data));
+      }
 
-    // Show modal container
-    setShowModal(true);
+      // Show modal container
+      setShowModal(true);
+    } catch (error) {
+      console.error("❌ Error generating sign animation:", error);
+      alert("Error generating animation. Please check the console.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,9 +79,10 @@ function App() {
                   type="file"
                   accept="video/*"
                   onChange={(e) => setVideo(e.target.files[0])}
+                  disabled={loading}
                 />
-                <button onClick={handleVideoUpload}>
-                  Translate Video
+                <button onClick={handleVideoUpload} disabled={loading}>
+                  {loading ? "Translating..." : "Translate Video"}
                 </button>
               </div>
 
@@ -76,10 +104,11 @@ function App() {
                   placeholder="Enter English sentence..."
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
+                  disabled={loading}
                 />
 
-                <button onClick={handleTextSubmit}>
-                  Generate Sign Animation
+                <button onClick={handleTextSubmit} disabled={loading}>
+                  {loading ? "Generating..." : "Generate Sign Animation"}
                 </button>
               </div>
             </div>
